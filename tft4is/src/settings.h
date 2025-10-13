@@ -25,7 +25,9 @@ void build(sets::Builder& b) {
         b.Input(kk::gen_query, "Промт");
         // b.Input(kk::gen_negative, "Исключить");
         b.Label(SH("status"), "Статус", gen.status);
+        b.Button(SH("next_image"), "Поменять");
         b.Button(SH("generate"), "Генерировать");
+        b.Button(SH("generate_by_prompt"), "По промпту");
     }
     {
         sets::Group g(b, "Автогенерация");
@@ -42,10 +44,10 @@ void build(sets::Builder& b) {
             b.Button(SH("wifi_save"), "Подключить");
         }
         {
-            sets::Menu m(b, "API");
+            sets::Menu m(b, "Image Server");
             sets::Group g(b);
-            b.Input(kk::ya_folder_id, "Folder ID");
-            b.Pass(kk::ya_api_id, "Application key");
+            b.Input(kk::imgs_host, "Host");
+            b.Pass(kk::imgs_port, "Application key");
             b.Button(SH("api_save"), "Применить");
         }
     }
@@ -55,16 +57,25 @@ void build(sets::Builder& b) {
     // actions
     if (b.build.isAction()) {
         switch (b.build.id) {
+            case SH("next_image"):
+                next_image();
+                init_tmr();
+                break;
             case SH("generate"):
                 generate();
                 init_tmr();
                 break;
+            case SH("generate_by_prompt"):
+                generatePrmt();
+                init_tmr();
+                break;
+
             case SH("wifi_save"):
                 db.update();
                 ESP.reset();
                 break;
             case SH("api_save"):
-                gen.setKey(db[kk::ya_api_id], db[kk::ya_folder_id]);
+                gen.setKey(db[kk::imgs_host], db[kk::imgs_port]);
                 db.update();
                 break;
             case kk::auto_gen:
@@ -90,5 +101,5 @@ void sett_init() {
 void sett_tick() {
     // ota.tick();
     sett.tick();
-    if (gentmr) generate();
+    if (gentmr) next_image();
 }

@@ -1,5 +1,4 @@
 #include <Arduino.h>
-
 #include "config.h"
 #include "db.h"
 #include "gen.h"
@@ -15,7 +14,7 @@ void setup() {
     tft_init();
 
     // ======= AI =======
-    gen.setKey(db[kk::ya_api_id], db[kk::ya_folder_id]);
+    gen.setKey(db[kk::imgs_host], db[kk::imgs_port]);
 
     // ======= AP =======
     WiFi.mode(WIFI_AP_STA);

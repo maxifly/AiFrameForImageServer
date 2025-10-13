@@ -1,8 +1,8 @@
 #pragma once
 #include <Arduino.h>
 // config
-#define FUSION_HOST "llm.api.cloud.yandex.net"
-#define FUSION_PORT 443
+// #define FUSION_HOST "llm.api.cloud.yandex.net"
+// #define FUSION_PORT 443
 #define FUSION_PERIOD 30000
 #define FUSION_TRIES 1
 #define FUS_LOG(x) Serial.println(x)
@@ -25,6 +25,8 @@
 
 #define	FINAL_BUF_SIZE		128
 #define	JDOC_START_SIZE		140
+
+const char* GEN_AUTO_BODY = "{\"type\": \"auto\"}";
 
 // Константы, определяющие внутреннюю область
 const int INTERNAL_X = 48;
@@ -65,14 +67,14 @@ class YandexArt {
          errorFilter["error"] = true;
     }
 
-    YandexArt(const String& api_id, const String& folder_id) : YandexArt()  {
-        setKey(api_id, folder_id);
+    YandexArt(const String& imgs_host, const String& imgs_port) : YandexArt()  {
+        setKey(imgs_host, imgs_port);
     }
 
-    void setKey(const String& api_id, const String& folder_id) {
-        if (api_id.length() && folder_id.length()) {
-            _api_id = api_id;
-            _folder_id = folder_id;
+    void setKey(const String& imgs_host, const String& imgs_port) {
+        if (imgs_host.length() && imgs_port.length()) {
+            _imgs_host = imgs_host;
+            _imgs_port = imgs_port;
         }
     }
     void onRender(RenderCallback cb) {
@@ -92,8 +94,8 @@ class YandexArt {
         }
     }
     bool begin() {
-        if (!_api_id.length()) return false;
-        if (!_folder_id.length()) return false;
+        if (!_imgs_host.length()) return false;
+        if (!_imgs_port.length()) return false;
         return false;
     }
 
@@ -102,18 +104,64 @@ class YandexArt {
         return false;
         //return request(State::GetStyles, "cdn.fusionbrain.ai", "/static/styles/web");
     }
-    bool generate(Text query, uint16_t width = 512, uint16_t height = 512, Text style = "DEFAULT", Text negative = "") {
+    bool next_image() {
+        status = "wrong config";
+        if (!_imgs_host.length()) return false;
+        if (!_imgs_port.length()) return false;
+
+        DynamicJsonDocument jsonDoc(1024);
+        jsonDoc["type"] = "auto";
+
+        String id;
+        bool done;
+        String errorMsg;
+
+        uint8_t tries = FUSION_TRIES;
+        while (tries--) {
+            //TODO Сильно поменять обработку ответа
+            if (performGenerateHttpRequest(_imgs_host, _imgs_port, "/operation/start", "POST", jsonDoc, id, errorMsg)) {
+                FUS_LOG("Gen request sent");
+                _tmr = millis();
+                _uuid = id;
+                if (!_uuid.length()) {
+                    status = "operation ID unknown";
+                    return false;
+                } 
+                status = "wait result";
+                return true;
+            } else {
+                FUS_LOG("Gen request error");
+                delay(2000);
+            }
+        }
+        status = "gen request error";
+        return false;        
+
+
+    }
+    bool generate() {
+        status = "unsupported";
+        if (!_imgs_host.length()) return false;
+        if (!_imgs_port.length()) return false;
+        return false;
+
+    }
+
+    bool generatePrmt(Text query) {
         // _uuid = "fbv2ad972upgdk5qnu88";
         // return true;
 
         status = "wrong config";
-        if (!_api_id.length()) return false;
-        if (!_folder_id.length()) return false;
+        if (!_imgs_host.length()) return false;
+        if (!_imgs_port.length()) return false;
         if (!query.length()) return false;
+
+        status = "unsupported";
+        return false;
 
         // Создание JSON-документа для тела запроса
         DynamicJsonDocument jsonDoc(JDOC_START_SIZE + (query.length() * 2));
-        jsonDoc["model_uri"] = "art://" + _folder_id + "/yandex-art/latest";
+        jsonDoc["model_uri"] = "art://" + _imgs_port + "/yandex-art/latest";
 
         
         // // Создание массива messages
@@ -165,7 +213,7 @@ class YandexArt {
         return false;
     }
     bool getImage() {
-        if (!_api_id.length()) return false;
+        if (!_imgs_host.length()) return false;
         if (!_uuid.length()) return false;
         FUS_LOG("Check status...");
         
@@ -185,8 +233,8 @@ class YandexArt {
     String styles = "";
     String status = "";
    private:
-    String _folder_id;
-    String _api_id;
+    String _imgs_host;
+    String _imgs_port;
     String _uuid;
     uint8_t _scale = 0;
     uint32_t _tmr = 0;
@@ -266,7 +314,7 @@ class YandexArt {
     }    
 
     // system
-    bool performGenerateHttpRequest(Text host, Text url, Text method, DynamicJsonDocument& jsonDoc, String& id, bool& done, String& errorMsg) {
+    bool performGenerateHttpRequest(String host, String port, Text url, Text method, DynamicJsonDocument& jsonDoc, String& id, bool& done, String& errorMsg) {
         // Сериализация JSON в строку
         String jsonString;
         serializeJson(jsonDoc, jsonString);
@@ -274,7 +322,7 @@ class YandexArt {
         // Установка заголовков
         ghttp::Client::Headers headers;
         headers.add("Content-Type", "application/json");
-        headers.add("Authorization", "Api-Key " + _api_id);
+        headers.add("Authorization", "Api-Key " + _imgs_host);
         headers.add("Accept", "*/*");
         
         FUSION_CLIENT client;
@@ -379,7 +427,7 @@ class YandexArt {
         // Установка заголовков
         ghttp::Client::Headers headers;
         headers.add("Content-Type", "application/json");
-        headers.add("Authorization", "Api-Key " + _api_id);
+        headers.add("Authorization", "Api-Key " + _imgs_host);
         headers.add("Accept", "*/*");
 
 
