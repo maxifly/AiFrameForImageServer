@@ -314,7 +314,7 @@ class YandexArt {
     }    
 
     // system
-    bool performGenerateHttpRequest(String host, String port, Text url, Text method, DynamicJsonDocument& jsonDoc, String& id, bool& done, String& errorMsg) {
+    bool performGenerateHttpRequest(String host, int port, Text url, Text method, DynamicJsonDocument& jsonDoc, String& id, bool& done, String& errorMsg) {
         // Сериализация JSON в строку
         String jsonString;
         serializeJson(jsonDoc, jsonString);
@@ -330,7 +330,7 @@ class YandexArt {
         client.setBufferSizes(512, 512);
 #endif
         client.setInsecure();
-        ghttp::Client http(client, host.str(), FUSION_PORT);
+        ghttp::Client http(client, host, port);
 
 
         // Отправка запроса
@@ -343,7 +343,7 @@ class YandexArt {
             return false;
         }
         
-        FUS_LOG("Host " + host.toString());
+        FUS_LOG("Host " + host);
         FUS_LOG("Url " + url.toString());
         FUS_LOG("Body " + jsonString);
         FUS_LOG("Headers");
