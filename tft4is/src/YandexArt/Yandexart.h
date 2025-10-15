@@ -12,16 +12,20 @@
 #include <GyverHTTP.h>
 #include "StreamB64.h"
 #include "tjpgd/tjpgd.h"
-#ifdef ESP8266
-#include <ESP8266WiFi.h>
-#include <WiFiClientSecure.h>
-#include <WiFiClientSecureBearSSL.h>
-#define FUSION_CLIENT BearSSL::WiFiClientSecure
-#else
-#include <WiFi.h>
-#include <WiFiClientSecure.h>
-#define FUSION_CLIENT WiFiClientSecure
-#endif
+// #ifdef ESP8266
+// #include <ESP8266WiFi.h>
+// #include <WiFiClientSecure.h>
+// #include <WiFiClientSecureBearSSL.h>
+
+// #define FUSION_CLIENT BearSSL::WiFiClientSecure
+// #else
+// #include <WiFi.h>
+// #include <WiFiClientSecure.h>
+// #define FUSION_CLIENT WiFiClientSecure
+// #endif
+
+#include <WiFiClient.h>
+#define FUSION_CLIENT WiFiClient
 
 #define	FINAL_BUF_SIZE		128
 #define	JDOC_START_SIZE		140
@@ -315,7 +319,7 @@ class YandexArt {
     }    
 
     // system
-    bool performGenerateHttpRequest(String host, uint16_t port, Text url, Text method, DynamicJsonDocument& jsonDoc, String& id, String& status, String& errorMsg) {
+    bool performGenerateHttpRequest(String host, uint16_t port, Text url, Text method, DynamicJsonDocument& jsonDoc, String& id, String& taskStatus, String& errorMsg) {
         FUS_LOG("-0-");
         // Сериализация JSON в строку
         String jsonString;
@@ -328,11 +332,11 @@ class YandexArt {
         headers.add("Accept", "*/*");
         
         FUSION_CLIENT client;
-#ifdef ESP8266
-        client.setBufferSizes(512, 512);
-#endif
+// #ifdef ESP8266
+//         client.setBufferSizes(512, 512);
+// #endif
         FUS_LOG("-1-");
-        client.setInsecure();
+        // client.setInsecure();
 
         IPAddress ip;
         if (ip.fromString(host)) {
@@ -418,13 +422,13 @@ class YandexArt {
         }
         
         if (docSuccess.containsKey("status")) {
-            status = docSuccess["status"].as<bool>();
+            taskStatus = docSuccess["status"].as<String>();
         } else {
-            status = "error";
+            taskStatus = "error";
         }
-        FUS_LOG("Operation id " + id + " status " + status);
+        FUS_LOG("Operation id " + id + " status " + taskStatus);
         http.flush();
-        return status == "error";
+        return taskStatus != "error";
     }
 
     bool performGetImageRequest(Text host, Text url, Text method, String& errorMsg) {

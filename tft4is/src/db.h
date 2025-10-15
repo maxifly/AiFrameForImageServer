@@ -18,7 +18,7 @@ void db_init() {
     db.begin();
     db.init(kk::wifi_ssid, "");
     db.init(kk::wifi_pass, "");
-    db.init(kk::imgs_host, "");
+    db.init(kk::imgs_host, "0.0.0.0");
     db.init(kk::imgs_port, 80);
 
     db.init(kk::gen_query, "");

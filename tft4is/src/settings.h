@@ -46,8 +46,8 @@ void build(sets::Builder& b) {
         {
             sets::Menu m(b, "Image Server");
             sets::Group g(b);
-            b.Input(kk::imgs_host, "Host");
-            b.Pass(kk::imgs_port, "Application key");
+            b.Input(kk::imgs_host, "IP");
+            b.Input(kk::imgs_port, "Port");
             b.Button(SH("api_save"), "Применить");
         }
     }
