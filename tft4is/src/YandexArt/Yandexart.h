@@ -61,18 +61,18 @@ class YandexArt {
     YandexArt() {
         // Определение статических фильтров
          successFilter["id"] = true;
-         successFilter["done"] = true;
+         successFilter["status"] = true;
          successFilter["error"] = true;
 
          errorFilter["error"] = true;
     }
 
-    YandexArt(const String& imgs_host, const String& imgs_port) : YandexArt()  {
+    YandexArt(const String& imgs_host, const int& imgs_port) : YandexArt()  {
         setKey(imgs_host, imgs_port);
     }
 
-    void setKey(const String& imgs_host, const String& imgs_port) {
-        if (imgs_host.length() && imgs_port.length()) {
+    void setKey(const String& imgs_host, const int& imgs_port) {
+        if (imgs_host.length() && imgs_port != 0) {
             _imgs_host = imgs_host;
             _imgs_port = imgs_port;
         }
@@ -95,7 +95,7 @@ class YandexArt {
     }
     bool begin() {
         if (!_imgs_host.length()) return false;
-        if (!_imgs_port.length()) return false;
+        // if (!_imgs_port.length()) return false;
         return false;
     }
 
@@ -107,19 +107,19 @@ class YandexArt {
     bool next_image() {
         status = "wrong config";
         if (!_imgs_host.length()) return false;
-        if (!_imgs_port.length()) return false;
+        // if (!_imgs_port.length()) return false;
 
         DynamicJsonDocument jsonDoc(1024);
         jsonDoc["type"] = "auto";
 
         String id;
-        bool done;
+        String taskStatus;
         String errorMsg;
 
         uint8_t tries = FUSION_TRIES;
         while (tries--) {
             //TODO Сильно поменять обработку ответа
-            if (performGenerateHttpRequest(_imgs_host, _imgs_port, "/operation/start", "POST", jsonDoc, id, errorMsg)) {
+            if (performGenerateHttpRequest(_imgs_host, _imgs_port, "/operation/start", "POST", jsonDoc, id, taskStatus, errorMsg)) {
                 FUS_LOG("Gen request sent");
                 _tmr = millis();
                 _uuid = id;
@@ -142,75 +142,75 @@ class YandexArt {
     bool generate() {
         status = "unsupported";
         if (!_imgs_host.length()) return false;
-        if (!_imgs_port.length()) return false;
+        // if (!_imgs_port.length()) return false;
         return false;
 
     }
 
     bool generatePrmt(Text query) {
         // _uuid = "fbv2ad972upgdk5qnu88";
-        // return true;
-
-        status = "wrong config";
-        if (!_imgs_host.length()) return false;
-        if (!_imgs_port.length()) return false;
-        if (!query.length()) return false;
-
-        status = "unsupported";
         return false;
 
-        // Создание JSON-документа для тела запроса
-        DynamicJsonDocument jsonDoc(JDOC_START_SIZE + (query.length() * 2));
-        jsonDoc["model_uri"] = "art://" + _imgs_port + "/yandex-art/latest";
+        // status = "wrong config";
+        // if (!_imgs_host.length()) return false;
+        // // if (!_imgs_port.length()) return false;
+        // if (!query.length()) return false;
+
+        // status = "unsupported";
+        // return false;
+
+        // // Создание JSON-документа для тела запроса
+        // DynamicJsonDocument jsonDoc(JDOC_START_SIZE + (query.length() * 2));
+        // jsonDoc["model_uri"] = "art://" + _imgs_port + "/yandex-art/latest";
 
         
-        // // Создание массива messages
-        JsonArray messages = jsonDoc.createNestedArray("messages");
-        JsonObject message1 = messages.createNestedObject();
-        message1["text"] = query;
-        message1["weight"] = 1;
+        // // // Создание массива messages
+        // JsonArray messages = jsonDoc.createNestedArray("messages");
+        // JsonObject message1 = messages.createNestedObject();
+        // message1["text"] = query;
+        // message1["weight"] = 1;
 
-        // if (negative.length() > 0) {
+        // // if (negative.length() > 0) {
             
-        //     JsonObject message2 = messages.createNestedObject();
-        //     message2["text"] = "Исключить " + negative.c_str();
-        //     message2["weight"] = 2;
-        // }
+        // //     JsonObject message2 = messages.createNestedObject();
+        // //     message2["text"] = "Исключить " + negative.c_str();
+        // //     message2["weight"] = 2;
+        // // }
 
-        // Создание объекта generation_options
-        JsonObject generationOptions = jsonDoc.createNestedObject("generation_options");
-        generationOptions["mime_type"] = "image/jpeg";
+        // // Создание объекта generation_options
+        // JsonObject generationOptions = jsonDoc.createNestedObject("generation_options");
+        // generationOptions["mime_type"] = "image/jpeg";
         
-        JsonObject aspectRatio = generationOptions.createNestedObject("aspectRatio");
-        aspectRatio["widthRatio"] = width;
-        aspectRatio["heightRatio"] = height;
+        // JsonObject aspectRatio = generationOptions.createNestedObject("aspectRatio");
+        // aspectRatio["widthRatio"] = width;
+        // aspectRatio["heightRatio"] = height;
 
-        // FUS_LOG("JSON being sent:");
-        // FUS_LOG(json);
+        // // FUS_LOG("JSON being sent:");
+        // // FUS_LOG(json);
 
-        String id;
-        bool done;
-        String errorMsg;
+        // String id;
+        // bool done;
+        // String errorMsg;
 
-        uint8_t tries = FUSION_TRIES;
-        while (tries--) {
-            if (performGenerateHttpRequest(FUSION_HOST, "/foundationModels/v1/imageGenerationAsync", "POST", jsonDoc, id, done, errorMsg)) {
-                FUS_LOG("Gen request sent");
-                _tmr = millis();
-                _uuid = id;
-                if (!_uuid.length()) {
-                    status = "operation ID unknown";
-                    return false;
-                } 
-                status = "wait result";
-                return true;
-            } else {
-                FUS_LOG("Gen request error");
-                delay(2000);
-            }
-        }
-        status = "gen request error";
-        return false;
+        // uint8_t tries = FUSION_TRIES;
+        // while (tries--) {
+        //     if (performGenerateHttpRequest(FUSION_HOST, "/foundationModels/v1/imageGenerationAsync", "POST", jsonDoc, id, done, errorMsg)) {
+        //         FUS_LOG("Gen request sent");
+        //         _tmr = millis();
+        //         _uuid = id;
+        //         if (!_uuid.length()) {
+        //             status = "operation ID unknown";
+        //             return false;
+        //         } 
+        //         status = "wait result";
+        //         return true;
+        //     } else {
+        //         FUS_LOG("Gen request error");
+        //         delay(2000);
+        //     }
+        // }
+        // status = "gen request error";
+        // return false;
     }
     bool getImage() {
         if (!_imgs_host.length()) return false;
@@ -220,7 +220,8 @@ class YandexArt {
         String errorMsg;
         String url("/operations/");
         url += _uuid;
-        return performGetImageRequest(FUSION_HOST, url, "GET", errorMsg);
+        // return performGetImageRequest(FUSION_HOST, url, "GET", errorMsg);
+        return false;
     }
 
     void tick() {
@@ -234,7 +235,7 @@ class YandexArt {
     String status = "";
    private:
     String _imgs_host;
-    String _imgs_port;
+    uint16_t _imgs_port;
     String _uuid;
     uint8_t _scale = 0;
     uint32_t _tmr = 0;
@@ -314,7 +315,8 @@ class YandexArt {
     }    
 
     // system
-    bool performGenerateHttpRequest(String host, int port, Text url, Text method, DynamicJsonDocument& jsonDoc, String& id, bool& done, String& errorMsg) {
+    bool performGenerateHttpRequest(String host, uint16_t port, Text url, Text method, DynamicJsonDocument& jsonDoc, String& id, String& status, String& errorMsg) {
+        FUS_LOG("-0-");
         // Сериализация JSON в строку
         String jsonString;
         serializeJson(jsonDoc, jsonString);
@@ -322,18 +324,32 @@ class YandexArt {
         // Установка заголовков
         ghttp::Client::Headers headers;
         headers.add("Content-Type", "application/json");
-        headers.add("Authorization", "Api-Key " + _imgs_host);
+        // headers.add("Authorization", "Api-Key " + _imgs_host);
         headers.add("Accept", "*/*");
         
         FUSION_CLIENT client;
 #ifdef ESP8266
         client.setBufferSizes(512, 512);
 #endif
+        FUS_LOG("-1-");
         client.setInsecure();
-        ghttp::Client http(client, host, port);
 
+        IPAddress ip;
+        if (ip.fromString(host)) {
+             FUS_LOG("-1.1-");
+        };
+        // ghttp::Client http(client, host.c_str(), port);
+        ghttp::Client http(client, ip, port);
+        FUS_LOG("-2-");
 
         // Отправка запроса
+        FUS_LOG("Host " + host);
+        
+        FUS_LOG("Port " + String(port));
+        FUS_LOG("Url " + url.toString());
+        FUS_LOG("Body " + jsonString);
+        FUS_LOG("Headers");
+        FUS_LOG(headers);
 
         bool ok = http.request(url, method, headers, jsonString);
         
@@ -342,12 +358,6 @@ class YandexArt {
             http.flush();
             return false;
         }
-        
-        FUS_LOG("Host " + host);
-        FUS_LOG("Url " + url.toString());
-        FUS_LOG("Body " + jsonString);
-        FUS_LOG("Headers");
-        FUS_LOG(headers);
 
         // Получение ответа
         ghttp::Client::Response resp = http.getResponse();
@@ -407,90 +417,91 @@ class YandexArt {
             id = "";
         }
         
-        if (docSuccess.containsKey("done")) {
-            done = docSuccess["done"].as<bool>();
+        if (docSuccess.containsKey("status")) {
+            status = docSuccess["status"].as<bool>();
         } else {
-            done = false;
+            status = "error";
         }
-        FUS_LOG("Operation id " + id);
+        FUS_LOG("Operation id " + id + " status " + status);
         http.flush();
-        return true;
+        return status == "error";
     }
 
     bool performGetImageRequest(Text host, Text url, Text method, String& errorMsg) {
         FUSION_CLIENT client;
-// #ifdef ESP8266
-        // client.setBufferSizes(512, 512);
-// #endif
-        client.setInsecure();
-        ghttp::Client http(client, host.str(), FUSION_PORT);
-        // Установка заголовков
-        ghttp::Client::Headers headers;
-        headers.add("Content-Type", "application/json");
-        headers.add("Authorization", "Api-Key " + _imgs_host);
-        headers.add("Accept", "*/*");
-
-
-        FUS_LOG("Host " + host.toString());
-        FUS_LOG("Url " + url.toString());
-        // FUS_LOG("Body " + jsonString);
-        FUS_LOG("Headers");
-        FUS_LOG(headers);
-
-
-        bool ok = http.request(url, method, headers);
-
-        if (!ok) {
-            FUS_LOG("Request error");
-            http.flush();
-            return false;
-        }
-
-        ghttp::Client::Response resp = http.getResponse();
-
-        int httpStatus = resp.code();
-        FUS_LOG("Response code: " + String(httpStatus));
-
-        if (resp) {
-            FUS_LOG("Response");      
-        } else {
-            FUS_LOG("Response not exists");
-            http.flush();
-            return false;               
-        }
-
-        if (httpStatus < 200 || httpStatus > 299) {
-            FUS_LOG("Parsing error ...");
-            // Парсинг ответа с использованием статического фильтра для ошибки
-
-            StreamReader responseBodyReader(resp.body());
-            DynamicJsonDocument docError(100);
-            DeserializationError err = deserializeJson(docError, responseBodyReader, DeserializationOption::Filter(errorFilter));
-
-            if (err) {
-                FUS_LOG("Failed to parse response JSON for error");
-                FUS_LOG(err.c_str());
-                http.flush();
-                return false;
-            }
-            
-            // Извлечение поля "error"
-            if (docError.containsKey("error")) {
-                errorMsg = docError["error"].as<String>();
-            } else {
-                errorMsg = "Unknown error";
-            }
-            FUS_LOG(errorMsg.c_str());
-            http.flush();
-            return false;
-        } else {
-                FUS_LOG("Parsing success document ...");
-                bool ok = parseStatus(resp.body());
-                http.flush();
-                return ok;
-        }
-
         return false;
+// // #ifdef ESP8266
+//         // client.setBufferSizes(512, 512);
+// // #endif
+//         client.setInsecure();
+//         ghttp::Client http(client, host.str(), FUSION_PORT);
+//         // Установка заголовков
+//         ghttp::Client::Headers headers;
+//         headers.add("Content-Type", "application/json");
+//         headers.add("Authorization", "Api-Key " + _imgs_host);
+//         headers.add("Accept", "*/*");
+
+
+//         FUS_LOG("Host " + host.toString());
+//         FUS_LOG("Url " + url.toString());
+//         // FUS_LOG("Body " + jsonString);
+//         FUS_LOG("Headers");
+//         FUS_LOG(headers);
+
+
+//         bool ok = http.request(url, method, headers);
+
+//         if (!ok) {
+//             FUS_LOG("Request error");
+//             http.flush();
+//             return false;
+//         }
+
+//         ghttp::Client::Response resp = http.getResponse();
+
+//         int httpStatus = resp.code();
+//         FUS_LOG("Response code: " + String(httpStatus));
+
+//         if (resp) {
+//             FUS_LOG("Response");      
+//         } else {
+//             FUS_LOG("Response not exists");
+//             http.flush();
+//             return false;               
+//         }
+
+//         if (httpStatus < 200 || httpStatus > 299) {
+//             FUS_LOG("Parsing error ...");
+//             // Парсинг ответа с использованием статического фильтра для ошибки
+
+//             StreamReader responseBodyReader(resp.body());
+//             DynamicJsonDocument docError(100);
+//             DeserializationError err = deserializeJson(docError, responseBodyReader, DeserializationOption::Filter(errorFilter));
+
+//             if (err) {
+//                 FUS_LOG("Failed to parse response JSON for error");
+//                 FUS_LOG(err.c_str());
+//                 http.flush();
+//                 return false;
+//             }
+            
+//             // Извлечение поля "error"
+//             if (docError.containsKey("error")) {
+//                 errorMsg = docError["error"].as<String>();
+//             } else {
+//                 errorMsg = "Unknown error";
+//             }
+//             FUS_LOG(errorMsg.c_str());
+//             http.flush();
+//             return false;
+//         } else {
+//                 FUS_LOG("Parsing success document ...");
+//                 bool ok = parseStatus(resp.body());
+//                 http.flush();
+//                 return ok;
+//         }
+
+//         return false;
     }
 
     String readValue(Stream& stream) {
