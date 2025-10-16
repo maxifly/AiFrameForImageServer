@@ -27,16 +27,22 @@
 #include <WiFiClient.h>
 #define FUSION_CLIENT WiFiClient
 
-#define	FINAL_BUF_SIZE		128
+#define	FINAL_BUF_SIZE		512
 #define	JDOC_START_SIZE		140
 
 const char* GEN_AUTO_BODY = "{\"type\": \"auto\"}";
 
 // Константы, определяющие внутреннюю область
-const int INTERNAL_X = 48;
-const int INTERNAL_Y = 80;
+// const int INTERNAL_X = 48;
+// const int INTERNAL_Y = 80;
+// const int INTERNAL_WIDTH = 320;
+// const int INTERNAL_HEIGHT = 480;
+
+const int INTERNAL_X = 0;
+const int INTERNAL_Y = 0;
 const int INTERNAL_WIDTH = 320;
 const int INTERNAL_HEIGHT = 480;
+
 
 // Вспомогательные макросы для вычисления минимума/максимума
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -217,15 +223,16 @@ class YandexArt {
         // return false;
     }
     bool getImage() {
+        FUS_LOG("Check status... 1");
         if (!_imgs_host.length()) return false;
+        if (_imgs_port == 0) return false;
         if (!_uuid.length()) return false;
         FUS_LOG("Check status...");
         
         String errorMsg;
-        String url("/operations/");
+        String url("/operation/result/");
         url += _uuid;
-        // return performGetImageRequest(FUSION_HOST, url, "GET", errorMsg);
-        return false;
+        return performGetImageRequest(_imgs_host, _imgs_port, url, "GET", errorMsg);
     }
 
     void tick() {
@@ -273,6 +280,7 @@ class YandexArt {
 
 
     static void filter_points(int x, int y, int width, int height, uint8_t* src_buf) {
+        FUS_LOG(" x " + String(x) + " y " + String(y) + " w " + String(width)  + " h " + String(height));
         // Вычисляем параметры пересечения прямоугольников
         int intersect_x = MAX(x, INTERNAL_X);
         int intersect_y = MAX(y, INTERNAL_Y);
@@ -308,6 +316,7 @@ class YandexArt {
                 int b = 31 - GET_B(color);
                 uint16_t inverted_color = SET_RGB(r, g, b);
                 
+                // FUS_LOG("index " + String(dst_index));
                 // Записываем инвертированный цвет в выходной буфер
                 self->_finalBuffer[dst_index] = inverted_color >> 8;
                 self->_finalBuffer[dst_index + 1] = inverted_color & 0xFF;
@@ -342,7 +351,7 @@ class YandexArt {
         if (ip.fromString(host)) {
              FUS_LOG("-1.1-");
         };
-        // ghttp::Client http(client, host.c_str(), port);
+
         ghttp::Client http(client, ip, port);
         FUS_LOG("-2-");
 
@@ -383,7 +392,7 @@ class YandexArt {
         if (httpStatus < 200 || httpStatus > 299) {
             // Парсинг ответа с использованием статического фильтра для ошибки
 
-            DynamicJsonDocument docError(100);
+            DynamicJsonDocument docError(200);
             DeserializationError err = deserializeJson(docError, responseBodyReader, DeserializationOption::Filter(errorFilter));
 
             if (err) {
@@ -393,13 +402,8 @@ class YandexArt {
                 return false;
             }
             
-            // Извлечение поля "error"
-            if (docError.containsKey("error")) {
-                errorMsg = docError["error"].as<String>();
-            } else {
-                errorMsg = "Unknown error";
-            }
-            FUS_LOG(errorMsg.c_str());
+            errorMsg = extractErrorMessage(docError);
+
             http.flush();
             return false;
         }
@@ -431,81 +435,82 @@ class YandexArt {
         return taskStatus != "error";
     }
 
-    bool performGetImageRequest(Text host, Text url, Text method, String& errorMsg) {
+    bool performGetImageRequest(String host, uint16_t port, Text url, Text method, String& errorMsg) {
         FUSION_CLIENT client;
+        // return false;
+// #ifdef ESP8266
+        // client.setBufferSizes(512, 512);
+// #endif
+        // client.setInsecure();
+
+        IPAddress ip;
+        if (ip.fromString(host)) {
+             FUS_LOG("-1.1-");
+        };
+
+        ghttp::Client http(client, ip, port);
+        // ghttp::Client http(client, host.str(), FUSION_PORT);
+        // Установка заголовков
+        ghttp::Client::Headers headers;
+        headers.add("Content-Type", "application/json");
+        headers.add("Accept", "*/*");
+
+
+        FUS_LOG("Port " + String(port));
+        FUS_LOG("Url " + url.toString());
+        // FUS_LOG("Body " + jsonString);
+        FUS_LOG("Headers");
+        FUS_LOG(headers);
+
+
+        bool ok = http.request(url, method, headers);
+
+        if (!ok) {
+            FUS_LOG("Request error");
+            http.flush();
+            return false;
+        }
+
+        ghttp::Client::Response resp = http.getResponse();
+
+        int httpStatus = resp.code();
+        FUS_LOG("Response code: " + String(httpStatus));
+
+        if (resp) {
+            FUS_LOG("Response");      
+        } else {
+            FUS_LOG("Response not exists");
+            http.flush();
+            return false;               
+        }
+
+        if (httpStatus < 200 || httpStatus > 299) {
+            FUS_LOG("Parsing error ...");
+            // Парсинг ответа с использованием статического фильтра для ошибки
+
+            StreamReader responseBodyReader(resp.body());
+            DynamicJsonDocument docError(100);
+            DeserializationError err = deserializeJson(docError, responseBodyReader, DeserializationOption::Filter(errorFilter));
+
+            if (err) {
+                FUS_LOG("Failed to parse response JSON for error");
+                FUS_LOG(err.c_str());
+                http.flush();
+                return false;
+            }
+
+            errorMsg = extractErrorMessage(docError);
+
+            http.flush();
+            return false;
+        } else {
+                FUS_LOG("Parsing success document ...");
+                bool ok = parseStatus(resp.body());
+                http.flush();
+                return ok;
+        }
+
         return false;
-// // #ifdef ESP8266
-//         // client.setBufferSizes(512, 512);
-// // #endif
-//         client.setInsecure();
-//         ghttp::Client http(client, host.str(), FUSION_PORT);
-//         // Установка заголовков
-//         ghttp::Client::Headers headers;
-//         headers.add("Content-Type", "application/json");
-//         headers.add("Authorization", "Api-Key " + _imgs_host);
-//         headers.add("Accept", "*/*");
-
-
-//         FUS_LOG("Host " + host.toString());
-//         FUS_LOG("Url " + url.toString());
-//         // FUS_LOG("Body " + jsonString);
-//         FUS_LOG("Headers");
-//         FUS_LOG(headers);
-
-
-//         bool ok = http.request(url, method, headers);
-
-//         if (!ok) {
-//             FUS_LOG("Request error");
-//             http.flush();
-//             return false;
-//         }
-
-//         ghttp::Client::Response resp = http.getResponse();
-
-//         int httpStatus = resp.code();
-//         FUS_LOG("Response code: " + String(httpStatus));
-
-//         if (resp) {
-//             FUS_LOG("Response");      
-//         } else {
-//             FUS_LOG("Response not exists");
-//             http.flush();
-//             return false;               
-//         }
-
-//         if (httpStatus < 200 || httpStatus > 299) {
-//             FUS_LOG("Parsing error ...");
-//             // Парсинг ответа с использованием статического фильтра для ошибки
-
-//             StreamReader responseBodyReader(resp.body());
-//             DynamicJsonDocument docError(100);
-//             DeserializationError err = deserializeJson(docError, responseBodyReader, DeserializationOption::Filter(errorFilter));
-
-//             if (err) {
-//                 FUS_LOG("Failed to parse response JSON for error");
-//                 FUS_LOG(err.c_str());
-//                 http.flush();
-//                 return false;
-//             }
-            
-//             // Извлечение поля "error"
-//             if (docError.containsKey("error")) {
-//                 errorMsg = docError["error"].as<String>();
-//             } else {
-//                 errorMsg = "Unknown error";
-//             }
-//             FUS_LOG(errorMsg.c_str());
-//             http.flush();
-//             return false;
-//         } else {
-//                 FUS_LOG("Parsing success document ...");
-//                 bool ok = parseStatus(resp.body());
-//                 http.flush();
-//                 return ok;
-//         }
-
-//         return false;
     }
 
     String readValue(Stream& stream) {
@@ -564,19 +569,24 @@ class YandexArt {
             }
 
             // TODO 
-            if (key == "done") {
+            if (key == "status") {
                 switch (Text(val).hash()) {
-                    case SH("true"):
-                        FUS_LOG("Done is true");
+                    case SH("done"):
+                        FUS_LOG("Status is done");
                         // В ответе должен быть image
                         _uuid = "";
                         break;
-                    case SH("false"):
-                        FUS_LOG("Done is false");
+                    case SH("pending"):
+                        FUS_LOG("Status is pending");
+                        return true;
+                        break;
+                    case SH("error"):
+                        FUS_LOG("Status is error");
+                        _uuid = "";
                         return true;
                         break;
                     default:
-                        FUS_LOG("Done is unknown");
+                        FUS_LOG("Status is unknown");
                         return true;
                 }
             }
@@ -595,12 +605,15 @@ class YandexArt {
             StreamB64 sb64(stream);
             _stream = &sb64;
             self = this;
+            FUS_LOG("-111-");
             jresult = jd_prepare(&jdec, jd_input_cb, workspace, TJPGD_WORKSPACE_SIZE, 0);
             if (jresult == JDR_OK) {
+                FUS_LOG("-222-");
                 jresult = jd_decomp(&jdec, jd_output_cb, _scale);
+                FUS_LOG("-333-");
                 if (jresult == JDR_OK && _end_cb) _end_cb();
             } else {
-                FUS_LOG("jdec error");
+                FUS_LOG("jdec error " + String(jresult));
             }
             self = nullptr;
             delete[] workspace;
@@ -608,6 +621,41 @@ class YandexArt {
             return jresult == JDR_OK;
         }
         return true;
+    }
+
+    // Функция для извлечения сообщения об ошибке из JSON-документа
+    String extractErrorMessage(DynamicJsonDocument& docError) {
+        String errorMsg = "Unknown error";
+
+        // Проверяем, содержит ли документ поле "error"
+        if (docError.containsKey("error")) {
+            JsonObject errorObj = docError["error"];
+
+            // Извлекаем код ошибки, если он есть
+            if (errorObj.containsKey("code")) {
+                errorMsg = errorObj["code"].as<String>();
+                FUS_LOG("Error code: " + errorMsg);
+            }
+
+            // Извлекаем сообщение об ошибке, если оно есть
+            if (errorObj.containsKey("message")) {
+                errorMsg = errorObj["message"].as<String>();
+                FUS_LOG("Error message: " + errorMsg);
+            }
+
+            // Извлекаем сообщение для разработчиков, если оно есть
+            if (errorObj.containsKey("dev_message")) {
+                String devMessage = errorObj["dev_message"].as<String>();
+                FUS_LOG("Dev message: " + devMessage);
+                // Если необходимо, можно обновить errorMsg на основе devMessage
+                // errorMsg = devMessage;
+            }
+        } else {
+            // Если поле "error" отсутствует, логируем это
+            FUS_LOG("Field 'error' is missing");
+        }
+
+        return errorMsg;
     }
 };
 
