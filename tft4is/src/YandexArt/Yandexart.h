@@ -109,46 +109,21 @@ class YandexArt {
         return false;
         //return request(State::GetStyles, "cdn.fusionbrain.ai", "/static/styles/web");
     }
+    
     bool next_image() {
-        status = "wrong config";
-        if (!_imgs_host.length()) return false;
-        // if (!_imgs_port.length()) return false;
-
         DynamicJsonDocument jsonDoc(1024);
         jsonDoc["type"] = "auto";
 
-        String id;
-        String taskStatus;
-        String errorMsg;
-
-        uint8_t tries = FUSION_TRIES;
-        while (tries--) {
-            if (performGenerateHttpRequest(_imgs_host, _imgs_port, "/operation/start", "POST", jsonDoc, id, taskStatus, errorMsg)) {
-                FUS_LOG("Gen request sent");
-                _tmr = millis();
-                _uuid = id;
-                if (!_uuid.length()) {
-                    status = "operation ID unknown";
-                    return false;
-                } 
-                status = "wait result";
-                return true;
-            } else {
-                FUS_LOG("Gen request error");
-                delay(2000);
-            }
-        }
-        status = "gen request error";
-        return false;        
-
-
+        return next_image_request(jsonDoc);
     }
-    bool generate() {
-        status = "unsupported";
-        if (!_imgs_host.length()) return false;
-        // if (!_imgs_port.length()) return false;
-        return false;
 
+
+    
+    bool generate() {
+        DynamicJsonDocument jsonDoc(1024);
+        jsonDoc["type"] = "ydart";
+
+        return next_image_request(jsonDoc);
     }
 
     bool generatePrmt(Text query) {
@@ -320,6 +295,39 @@ class YandexArt {
     }    
 
     // system
+    bool next_image_request(DynamicJsonDocument& jsonDoc) {
+        status = "wrong config";
+        if (!_imgs_host.length()) return false;
+        if ( _imgs_port == 0) return false;
+
+
+
+        String id;
+        String taskStatus;
+        String errorMsg;
+
+        uint8_t tries = FUSION_TRIES;
+        while (tries--) {
+            if (performGenerateHttpRequest(_imgs_host, _imgs_port, "/operation/start", "POST", jsonDoc, id, taskStatus, errorMsg)) {
+                FUS_LOG("Gen request sent");
+                _tmr = millis();
+                _uuid = id;
+                if (!_uuid.length()) {
+                    status = "operation ID unknown";
+                    return false;
+                } 
+                status = "wait result";
+                return true;
+            } else {
+                FUS_LOG("Gen request error");
+                delay(2000);
+            }
+        }
+        status = "gen request error";
+        return false;        
+    }
+
+
     bool performGenerateHttpRequest(String host, uint16_t port, Text url, Text method, DynamicJsonDocument& jsonDoc, String& id, String& taskStatus, String& errorMsg) {
         // Сериализация JSON в строку
         String jsonString;
