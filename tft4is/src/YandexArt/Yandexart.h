@@ -127,70 +127,15 @@ class YandexArt {
     }
 
     bool generatePrmt(Text query) {
-        // _uuid = "fbv2ad972upgdk5qnu88";
-        return false;
+        if (!query.length()) return false;
 
-        // status = "wrong config";
-        // if (!_imgs_host.length()) return false;
-        // // if (!_imgs_port.length()) return false;
-        // if (!query.length()) return false;
+        DynamicJsonDocument jsonDoc(1024);
+        jsonDoc["type"] = "ydart";
+        jsonDoc["prompt"] = query;
 
-        // status = "unsupported";
-        // return false;
-
-        // // Создание JSON-документа для тела запроса
-        // DynamicJsonDocument jsonDoc(JDOC_START_SIZE + (query.length() * 2));
-        // jsonDoc["model_uri"] = "art://" + _imgs_port + "/yandex-art/latest";
-
-        
-        // // // Создание массива messages
-        // JsonArray messages = jsonDoc.createNestedArray("messages");
-        // JsonObject message1 = messages.createNestedObject();
-        // message1["text"] = query;
-        // message1["weight"] = 1;
-
-        // // if (negative.length() > 0) {
-            
-        // //     JsonObject message2 = messages.createNestedObject();
-        // //     message2["text"] = "Исключить " + negative.c_str();
-        // //     message2["weight"] = 2;
-        // // }
-
-        // // Создание объекта generation_options
-        // JsonObject generationOptions = jsonDoc.createNestedObject("generation_options");
-        // generationOptions["mime_type"] = "image/jpeg";
-        
-        // JsonObject aspectRatio = generationOptions.createNestedObject("aspectRatio");
-        // aspectRatio["widthRatio"] = width;
-        // aspectRatio["heightRatio"] = height;
-
-        // // FUS_LOG("JSON being sent:");
-        // // FUS_LOG(json);
-
-        // String id;
-        // bool done;
-        // String errorMsg;
-
-        // uint8_t tries = FUSION_TRIES;
-        // while (tries--) {
-        //     if (performGenerateHttpRequest(FUSION_HOST, "/foundationModels/v1/imageGenerationAsync", "POST", jsonDoc, id, done, errorMsg)) {
-        //         FUS_LOG("Gen request sent");
-        //         _tmr = millis();
-        //         _uuid = id;
-        //         if (!_uuid.length()) {
-        //             status = "operation ID unknown";
-        //             return false;
-        //         } 
-        //         status = "wait result";
-        //         return true;
-        //     } else {
-        //         FUS_LOG("Gen request error");
-        //         delay(2000);
-        //     }
-        // }
-        // status = "gen request error";
-        // return false;
+        return next_image_request(jsonDoc);
     }
+
     bool getImage() {
         if (!_imgs_host.length()) return false;
         if (_imgs_port == 0) return false;

@@ -42,7 +42,7 @@ void gen_tick() {
     } else if (gen_flag) {
         clearFlags();
         gen.generate();
-    }  else if (gen_flag) {
+    }  else if (gen_prompt_flag) {
         clearFlags();
         gen.generatePrmt(
             db[kk::gen_query]);
