@@ -33,11 +33,6 @@
 const char* GEN_AUTO_BODY = "{\"type\": \"auto\"}";
 
 // Константы, определяющие внутреннюю область
-// const int INTERNAL_X = 48;
-// const int INTERNAL_Y = 80;
-// const int INTERNAL_WIDTH = 320;
-// const int INTERNAL_HEIGHT = 480;
-
 const int INTERNAL_X = 0;
 const int INTERNAL_Y = 0;
 const int INTERNAL_WIDTH = 320;
@@ -128,7 +123,6 @@ class YandexArt {
 
         uint8_t tries = FUSION_TRIES;
         while (tries--) {
-            //TODO Сильно поменять обработку ответа
             if (performGenerateHttpRequest(_imgs_host, _imgs_port, "/operation/start", "POST", jsonDoc, id, taskStatus, errorMsg)) {
                 FUS_LOG("Gen request sent");
                 _tmr = millis();
@@ -223,7 +217,6 @@ class YandexArt {
         // return false;
     }
     bool getImage() {
-        FUS_LOG("Check status... 1");
         if (!_imgs_host.length()) return false;
         if (_imgs_port == 0) return false;
         if (!_uuid.length()) return false;
@@ -280,7 +273,7 @@ class YandexArt {
 
 
     static void filter_points(int x, int y, int width, int height, uint8_t* src_buf) {
-        FUS_LOG(" x " + String(x) + " y " + String(y) + " w " + String(width)  + " h " + String(height));
+        // FUS_LOG(" x " + String(x) + " y " + String(y) + " w " + String(width)  + " h " + String(height));
         // Вычисляем параметры пересечения прямоугольников
         int intersect_x = MAX(x, INTERNAL_X);
         int intersect_y = MAX(y, INTERNAL_Y);
@@ -316,7 +309,6 @@ class YandexArt {
                 int b = 31 - GET_B(color);
                 uint16_t inverted_color = SET_RGB(r, g, b);
                 
-                // FUS_LOG("index " + String(dst_index));
                 // Записываем инвертированный цвет в выходной буфер
                 self->_finalBuffer[dst_index] = inverted_color >> 8;
                 self->_finalBuffer[dst_index + 1] = inverted_color & 0xFF;
@@ -329,7 +321,6 @@ class YandexArt {
 
     // system
     bool performGenerateHttpRequest(String host, uint16_t port, Text url, Text method, DynamicJsonDocument& jsonDoc, String& id, String& taskStatus, String& errorMsg) {
-        FUS_LOG("-0-");
         // Сериализация JSON в строку
         String jsonString;
         serializeJson(jsonDoc, jsonString);
@@ -337,27 +328,23 @@ class YandexArt {
         // Установка заголовков
         ghttp::Client::Headers headers;
         headers.add("Content-Type", "application/json");
-        // headers.add("Authorization", "Api-Key " + _imgs_host);
         headers.add("Accept", "*/*");
         
         FUSION_CLIENT client;
 // #ifdef ESP8266
 //         client.setBufferSizes(512, 512);
 // #endif
-        FUS_LOG("-1-");
         // client.setInsecure();
 
         IPAddress ip;
-        if (ip.fromString(host)) {
-             FUS_LOG("-1.1-");
+        if (!ip.fromString(host)) {
+             FUS_LOG("Can not translate IP");
         };
 
         ghttp::Client http(client, ip, port);
-        FUS_LOG("-2-");
 
         // Отправка запроса
         FUS_LOG("Host " + host);
-        
         FUS_LOG("Port " + String(port));
         FUS_LOG("Url " + url.toString());
         FUS_LOG("Body " + jsonString);
@@ -445,7 +432,7 @@ class YandexArt {
 
         IPAddress ip;
         if (ip.fromString(host)) {
-             FUS_LOG("-1.1-");
+             FUS_LOG("Can not translate IP");
         };
 
         ghttp::Client http(client, ip, port);
@@ -456,9 +443,9 @@ class YandexArt {
         headers.add("Accept", "*/*");
 
 
+        FUS_LOG("Host " + host);
         FUS_LOG("Port " + String(port));
         FUS_LOG("Url " + url.toString());
-        // FUS_LOG("Body " + jsonString);
         FUS_LOG("Headers");
         FUS_LOG(headers);
 
@@ -568,7 +555,6 @@ class YandexArt {
                 break;
             }
 
-            // TODO 
             if (key == "status") {
                 switch (Text(val).hash()) {
                     case SH("done"):
@@ -605,15 +591,13 @@ class YandexArt {
             StreamB64 sb64(stream);
             _stream = &sb64;
             self = this;
-            FUS_LOG("-111-");
+
             jresult = jd_prepare(&jdec, jd_input_cb, workspace, TJPGD_WORKSPACE_SIZE, 0);
             if (jresult == JDR_OK) {
-                FUS_LOG("-222-");
                 jresult = jd_decomp(&jdec, jd_output_cb, _scale);
-                FUS_LOG("-333-");
                 if (jresult == JDR_OK && _end_cb) _end_cb();
             } else {
-                FUS_LOG("jdec error " + String(jresult));
+                FUS_LOG("jdec prepare error " + String(jresult));
             }
             self = nullptr;
             delete[] workspace;
