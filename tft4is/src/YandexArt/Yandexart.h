@@ -117,6 +117,12 @@ class YandexArt {
         return next_image_request(jsonDoc);
     }
 
+    void sendPrompt(Text prompt) {
+        DynamicJsonDocument jsonDoc(1024);
+        jsonDoc["prompt"] = prompt;
+        send_prompt_request(jsonDoc);
+    }
+
 
     
     bool generate() {
@@ -157,6 +163,7 @@ class YandexArt {
     String modelID() { return _id; }
     String styles = "";
     String status = "";
+    String b_status = "";
    private:
     String _imgs_host;
     uint16_t _imgs_port;
@@ -240,6 +247,8 @@ class YandexArt {
     }    
 
     // system
+
+    
     bool next_image_request(DynamicJsonDocument& jsonDoc) {
         status = "wrong config";
         if (!_imgs_host.length()) return false;
@@ -272,6 +281,31 @@ class YandexArt {
         return false;        
     }
 
+   
+    bool send_prompt_request(DynamicJsonDocument& jsonDoc) {
+        if (!_imgs_host.length()) return false;
+        if ( _imgs_port == 0) return false;
+
+
+
+        String id;
+        String taskStatus;
+        String errorMsg;
+
+        uint8_t tries = FUSION_TRIES;
+
+        if (performGenerateHttpRequest(_imgs_host, _imgs_port, "/prompt/add", "POST", jsonDoc, id, taskStatus, errorMsg)) {
+            FUS_LOG("Prompt add request sent");
+            b_status = "";
+            return true;
+        } else {
+            FUS_LOG("Prompt add request error");
+            delay(2000);
+        }
+
+        b_status = "Prompt add request error";
+        return false;        
+    }
 
     bool performGenerateHttpRequest(String host, uint16_t port, Text url, Text method, DynamicJsonDocument& jsonDoc, String& id, String& taskStatus, String& errorMsg) {
         // Сериализация JSON в строку

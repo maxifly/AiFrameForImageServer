@@ -29,8 +29,6 @@ void generatePrmt() {
 }
 
 
-
-
 void gen_tick() {
     gen.tick();
 
