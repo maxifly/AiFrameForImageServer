@@ -6,7 +6,7 @@
 #include "db.h"
 #include "gen.h"
 // #include "timer.h"
-SettingsGyver sett("AI Фоторамка v" F_VERSION, &db);
+SettingsGyver sett("AI Фоторамка для ImageServer v" F_VERSION, &db);
 sets::Timer gentmr;
 
 // AutoOTA ota(F_VERSION, "AlexGyver/AiFrame/main/project.json");
@@ -25,7 +25,7 @@ void build(sets::Builder& b) {
         b.Input(kk::gen_query, "Промт");
         // b.Input(kk::gen_negative, "Исключить");
         b.Label(SH("status"), "Статус", gen.status);
-        b.Label(SH("b_status"), "Статус", gen.b_status);        
+        // b.Label(SH("b_status"), "Статус", gen.b_status);        
         b.Button(SH("next_image"), "Поменять");
         b.Button(SH("generate"), "Генерировать");
         b.Button(SH("generate_by_prompt"), "По промпту");
