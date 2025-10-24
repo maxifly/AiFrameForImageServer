@@ -192,6 +192,7 @@ class YandexArt {
    
     static int jd_output_cb(JDEC* jdec, void* bitmap, JRECT* rect) {
         if (self && self->_rnd_cb) {
+            yield();
             filter_points(rect->left, rect->top, rect->right - rect->left + 1, rect->bottom - rect->top + 1, (uint8_t*)bitmap);
             // self->_rnd_cb(rect->left, rect->top, rect->right - rect->left + 1, rect->bottom - rect->top + 1, (uint8_t*)bitmap);
         }
