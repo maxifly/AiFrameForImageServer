@@ -9,6 +9,7 @@ void setup() {
     Serial.begin(115200);
     Serial.println();
 
+    Serial.println("Start");
     db_init();
     sett_init();
     tft_init();
@@ -76,6 +77,10 @@ void setup() {
 
     tft.println("Ready!");
     Serial.println("Ready!");
+
+    // Сразу после старта просим следующее изображение
+    next_image();
+ 
 
     // if (WiFi.status() == WL_CONNECTED) ota.checkUpdate();
 }

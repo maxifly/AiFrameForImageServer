@@ -6,6 +6,8 @@
 #include "db.h"
 #include "gen.h"
 // #include "timer.h"
+#define FUS_LOG(x) Serial.println(x)
+
 SettingsGyver sett("AI Фоторамка для ImageServer v" F_VERSION, &db);
 sets::Timer gentmr;
 
@@ -14,8 +16,12 @@ sets::Timer gentmr;
 void init_tmr() {
     int prd = db[kk::auto_prd];
     gentmr.setTime(0, max(prd, 60));
-    if (db[kk::auto_gen].toBool()) gentmr.startInterval();
-    else gentmr.stop();
+    if (db[kk::auto_gen].toBool()) {
+      gentmr.startInterval();
+    }
+    else {
+      gentmr.stop();
+    }
 }
 
 void build(sets::Builder& b) {
