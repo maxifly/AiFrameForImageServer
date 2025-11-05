@@ -12,20 +12,20 @@
 #include <GyverHTTP.h>
 #include "StreamB64.h"
 #include "tjpgd/tjpgd.h"
-// #ifdef ESP8266
-// #include <ESP8266WiFi.h>
-// #include <WiFiClientSecure.h>
-// #include <WiFiClientSecureBearSSL.h>
+#ifdef ESP8266
+#include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
+#include <WiFiClientSecureBearSSL.h>
 
-// #define FUSION_CLIENT BearSSL::WiFiClientSecure
-// #else
-// #include <WiFi.h>
-// #include <WiFiClientSecure.h>
-// #define FUSION_CLIENT WiFiClientSecure
-// #endif
+#define FUSION_CLIENT BearSSL::WiFiClientSecure
+#else
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#define FUSION_CLIENT WiFiClientSecure
+#endif
 
-#include <WiFiClient.h>
-#define FUSION_CLIENT WiFiClient
+// #include <WiFiClient.h>
+// #define FUSION_CLIENT WiFiClient
 
 #define	FINAL_BUF_SIZE		512
 #define	JDOC_START_SIZE		140
@@ -322,7 +322,7 @@ class YandexArt {
 // #ifdef ESP8266
 //         client.setBufferSizes(512, 512);
 // #endif
-        // client.setInsecure();
+        client.setInsecure();
 
         IPAddress ip;
         if (!ip.fromString(host)) {
@@ -416,7 +416,7 @@ class YandexArt {
 // #ifdef ESP8266
         // client.setBufferSizes(512, 512);
 // #endif
-        // client.setInsecure();
+        client.setInsecure();
 
         IPAddress ip;
         if (ip.fromString(host)) {
