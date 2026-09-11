@@ -29,6 +29,7 @@
 
 #define	FINAL_BUF_SIZE		512
 #define	JDOC_START_SIZE		140
+#define CLIENT_TIMEOUT      10000
 
 const char* GEN_AUTO_BODY = "{\"type\": \"auto\"}";
 
@@ -330,6 +331,7 @@ class YandexArt {
         };
 
         ghttp::Client http(client, ip, port);
+        http.setTimeout(CLIENT_TIMEOUT);
 
         // Отправка запроса
         FUS_LOG("Host " + host);
